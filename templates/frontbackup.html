@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Robot Car</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            background: black;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        img {
+            width: 95%;
+            max-width: 800px;
+            border-radius: 10px;
+        }
+
+        /* button{
+width:120px;
+height:60px;
+font-size:20px;
+margin:5px;
+border:none;
+border-radius:10px;
+} */
+
+        button {
+            width: 120px;
+            height: 60px;
+            font-size: 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 10px;
+
+            user-select: none;
+            -webkit-user-select: none;
+
+            touch-action: manipulation;
+        }
+
+        #status{
+    background:#222;
+    padding:10px;
+    margin:10px;
+    border-radius:10px;
+    font-size:18px;
+
+    height:60px;
+    box-sizing:border-box;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+}
+    </style>
+
+</head>
+
+<body>
+
+    <h1>Robot Car</h1>
+
+    <div id="status" style="
+        background:#222;
+        padding:10px;
+        margin:10px;
+        border-radius:10px;
+        font-size:18px;">
+        Ready
+    </div>
+
+    <img src="/video_feed">
+
+    <br><br>
+
+    <button onclick="send('forward')">
+        ▲
+    </button>
+
+    <br>
+
+    <button onclick="send('left')">
+        ◀
+    </button>
+
+    <button onclick="send('stop')">
+        ■
+    </button>
+
+    <button onclick="send('right')">
+        ▶
+    </button>
+
+    <br>
+
+    <button onclick="send('backward')">
+        ▼
+    </button>
+
+    <br><br>
+
+
+    <button onmousedown="startMove('forward')" onmouseup="stopMove()" onmouseleave="stopMove()"
+        ontouchstart="startMove('forward')" ontouchend="stopMove()">
+        Forward
+    </button>
+
+    <button onmousedown="startMove('backward')" onmouseup="stopMove()" onmouseleave="stopMove()"
+        ontouchstart="startMove('backward')" ontouchend="stopMove()">
+        Backward
+    </button>
+
+    <button onmousedown="startMove('left')" onmouseup="stopMove()" onmouseleave="stopMove()"
+        ontouchstart="startMove('left')" ontouchend="stopMove()">
+        Left
+    </button>
+
+    <button onmousedown="startMove('right')" onmouseup="stopMove()" onmouseleave="stopMove()"
+        ontouchstart="startMove('right')" ontouchend="stopMove()">
+        Right
+    </button>
+
+    <h2>Camera</h2>
+
+    <button onmousedown="startCamera('cam_left')" onmouseup="stopCamera()" onmouseleave="stopCamera()"
+        ontouchstart="startCamera('cam_left')" ontouchend="stopCamera()">
+        Camera Left
+    </button>
+
+    <button onmousedown="startCamera('cam_right')" onmouseup="stopCamera()" onmouseleave="stopCamera()"
+        ontouchstart="startCamera('cam_right')" ontouchend="stopCamera()">
+        Camera Right
+    </button>
+
+    <button onclick="send('cam_center')">
+        Reset Center
+    </button>
+
+    <!-- <script>
+
+        function send(cmd) {
+
+            fetch('/' + cmd)
+
+        }
+
+    </script> -->
+
+    <script>
+
+        let currentCommand = null;
+
+        async function send(cmd) {
+console.log("cmd here==>", cmd);
+            try {
+
+                const response = await fetch('/' + cmd);
+
+                const data = await response.json();
+
+                document.getElementById('status').innerHTML =
+                    data.message;
+
+            }
+            catch (error) {
+
+                document.getElementById('status').innerHTML =
+                    "❌ Connection Error";
+            }
+        }
+
+        function startMove(cmd) {
+
+            if (currentCommand === cmd)
+                return;
+
+            currentCommand = cmd;
+
+            send(cmd);
+        }
+
+        function stopMove() {
+
+            currentCommand = null;
+
+            send('stop');
+        }
+
+        let currentCameraCommand = null;
+        let cameraTimer = null;
+
+        function startCamera(cmd) {
+            if (currentCameraCommand === cmd)
+                return;
+
+            stopCamera();
+
+            currentCameraCommand = cmd;
+            send(cmd);
+
+            cameraTimer = setInterval(() => send(cmd), 150);
+        }
+
+        function stopCamera() {
+            if (cameraTimer) {
+                clearInterval(cameraTimer);
+                cameraTimer = null;
+            }
+
+            currentCameraCommand = null;
+        }
+
+        document.addEventListener('mouseup', () => {
+            stopMove();
+            stopCamera();
+        });
+        document.addEventListener('touchend', () => {
+            stopMove();
+            stopCamera();
+        });
+
+        // document.addEventListener('mouseup', stopMove);
+        // document.addEventListener('touchend', stopMove);
+        document.addEventListener('touchcancel', () => {
+            stopMove();
+            stopCamera();
+        });
+
+
+
+
+
+        setInterval(async () => {
+
+            try {
+
+                const response = await fetch('/status');
+
+                const data = await response.json();
+
+                document.getElementById('status').innerHTML =
+                    data.status +
+                    "<br>Distance: " +
+                    data.distance +
+                    " cm" +
+                    "<br>Camera: " +
+                    data.camera_position +
+                    " steps";
+
+            }
+            catch (error) {
+
+                document.getElementById('status').innerHTML =
+                    "❌ Robot Offline";
+            }
+
+        }, 500);
+    </script>
+
+</body>
+
+</html>

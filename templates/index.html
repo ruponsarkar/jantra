@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Robot Car</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top, #16324f 0%, #08111d 45%, #02060c 100%);
+            color: white;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .app-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
+
+        h1 {
+            margin: 0 0 18px;
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.9fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .video-panel,
+        .controls-panel {
+            background: rgba(8, 16, 29, 0.88);
+            border: 1px solid rgba(126, 178, 255, 0.18);
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+            padding: 18px;
+            backdrop-filter: blur(10px);
+        }
+
+        img {
+            display: block;
+            width: 100%;
+            border-radius: 18px;
+            border: 1px solid rgba(126, 178, 255, 0.18);
+        }
+
+        button {
+            border: none;
+            border-radius: 18px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(180deg, #2c6fb2 0%, #17416d 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 14px 22px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(180deg, #3582d0 0%, #1b4d80 100%);
+        }
+
+        button:active {
+            transform: translateY(1px) scale(0.99);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+        }
+
+        .panel-title {
+            margin: 0 0 14px;
+            font-size: 0.9rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #9fc7ff;
+        }
+
+        #status {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 12px;
+            margin: 0 0 18px;
+            border-radius: 16px;
+            font-size: 1rem;
+            height: 104px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            line-height: 1.45;
+            overflow: hidden;
+        }
+
+        .control-section + .control-section {
+            margin-top: 22px;
+        }
+
+        .drive-pad {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(78px, 1fr));
+            gap: 12px;
+            justify-items: stretch;
+            align-items: stretch;
+        }
+
+        .drive-btn {
+            min-height: 82px;
+            padding: 10px;
+        }
+
+        .drive-btn.forward {
+            grid-column: 2;
+        }
+
+        .drive-btn.left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .drive-btn.stop {
+            grid-column: 2;
+            grid-row: 2;
+            background: linear-gradient(180deg, #d6673b 0%, #8b2f17 100%);
+        }
+
+        .drive-btn.right {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .drive-btn.backward {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        .btn-arrow {
+            display: block;
+            font-size: 1.5rem;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .camera-controls {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .camera-controls button:last-child {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 860px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="app-shell">
+        <h1>Robot Car</h1>
+
+        <div class="dashboard">
+            <section class="video-panel">
+                <div class="panel-title">Live Camera Feed</div>
+                <img src="/video_feed">
+            </section>
+
+            <aside class="controls-panel">
+                <div id="status">
+                    Ready
+                </div>
+
+                <div class="control-section">
+                    <div class="panel-title">Drive Controls</div>
+                    <div class="drive-pad">
+                        <button class="drive-btn forward" onmousedown="startMove('forward')" onmouseup="stopMove()"
+                            onmouseleave="stopMove()" ontouchstart="startMove('forward')" ontouchend="stopMove()">
+                            <span class="btn-arrow">▲</span>
+                            Forward
+                        </button>
+
+                        <button class="drive-btn left" onmousedown="startMove('left')" onmouseup="stopMove()"
+                            onmouseleave="stopMove()" ontouchstart="startMove('left')" ontouchend="stopMove()">
+                            <span class="btn-arrow">◀</span>
+                            Left
+                        </button>
+
+                        <button class="drive-btn stop" onclick="send('stop')">
+                            <span class="btn-arrow">■</span>
+                            Stop
+                        </button>
+
+                        <button class="drive-btn right" onmousedown="startMove('right')" onmouseup="stopMove()"
+                            onmouseleave="stopMove()" ontouchstart="startMove('right')" ontouchend="stopMove()">
+                            <span class="btn-arrow">▶</span>
+                            Right
+                        </button>
+
+                        <button class="drive-btn backward" onmousedown="startMove('backward')" onmouseup="stopMove()"
+                            onmouseleave="stopMove()" ontouchstart="startMove('backward')" ontouchend="stopMove()">
+                            <span class="btn-arrow">▼</span>
+                            Backward
+                        </button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <div class="panel-title">Camera Controls</div>
+                    <div class="camera-controls">
+                        <button onmousedown="startCamera('cam_left')" onmouseup="stopCamera()"
+                            onmouseleave="stopCamera()" ontouchstart="startCamera('cam_left')"
+                            ontouchend="stopCamera()">
+                            Camera Left
+                        </button>
+
+                        <button onmousedown="startCamera('cam_right')" onmouseup="stopCamera()"
+                            onmouseleave="stopCamera()" ontouchstart="startCamera('cam_right')"
+                            ontouchend="stopCamera()">
+                            Camera Right
+                        </button>
+
+                        <button onclick="send('cam_center')">
+                            Reset Center
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- <script>
+
+        function send(cmd) {
+
+            fetch('/' + cmd)
+
+        }
+
+    </script> -->
+
+    <script>
+
+        let currentCommand = null;
+
+        async function send(cmd) {
+console.log("cmd here==>", cmd);
+            try {
+
+                const response = await fetch('/' + cmd);
+
+                const data = await response.json();
+
+                document.getElementById('status').innerHTML =
+                    data.message;
+
+            }
+            catch (error) {
+
+                document.getElementById('status').innerHTML =
+                    "❌ Connection Error";
+            }
+        }
+
+        function startMove(cmd) {
+
+            if (currentCommand === cmd)
+                return;
+
+            currentCommand = cmd;
+
+            send(cmd);
+        }
+
+        function stopMove() {
+
+            currentCommand = null;
+
+            send('stop');
+        }
+
+        let currentCameraCommand = null;
+        let cameraTimer = null;
+
+        function startCamera(cmd) {
+            if (currentCameraCommand === cmd)
+                return;
+
+            stopCamera();
+
+            currentCameraCommand = cmd;
+            send(cmd);
+
+            cameraTimer = setInterval(() => send(cmd), 150);
+        }
+
+        function stopCamera() {
+            if (cameraTimer) {
+                clearInterval(cameraTimer);
+                cameraTimer = null;
+            }
+
+            currentCameraCommand = null;
+        }
+
+        document.addEventListener('mouseup', () => {
+            stopMove();
+            stopCamera();
+        });
+        document.addEventListener('touchend', () => {
+            stopMove();
+            stopCamera();
+        });
+
+        // document.addEventListener('mouseup', stopMove);
+        // document.addEventListener('touchend', stopMove);
+        document.addEventListener('touchcancel', () => {
+            stopMove();
+            stopCamera();
+        });
+
+
+
+
+
+        setInterval(async () => {
+
+            try {
+
+                const response = await fetch('/status');
+
+                const data = await response.json();
+
+                document.getElementById('status').innerHTML =
+                    data.status +
+                    "<br>Distance: " +
+                    data.distance +
+                    " cm" +
+                    "<br>Camera: " +
+                    data.camera_position +
+                    " steps";
+
+            }
+            catch (error) {
+
+                document.getElementById('status').innerHTML =
+                    "❌ Robot Offline";
+            }
+
+        }, 500);
+    </script>
+
+</body>
+
+</html>
