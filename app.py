@@ -97,14 +97,14 @@ if Picamera2 is not None:
     try:
         picam2.configure(
             picam2.create_video_configuration(
-                main={"size": (640, 480), "format": "RGB888"},
+                main={"size": (1280, 720), "format": "RGB888"},
                 buffer_count=2
             )
         )
     except Exception:
         picam2.configure(
             picam2.create_video_configuration(
-                main={"size": (640, 480)},
+                main={"size": (1280, 720)},
                 buffer_count=2
             )
         )
@@ -400,12 +400,10 @@ def gen_frames():
         if frame is None:
             continue
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
         _, buffer = cv2.imencode(
             '.jpg',
             frame,
-            [int(cv2.IMWRITE_JPEG_QUALITY), 80]
+            [int(cv2.IMWRITE_JPEG_QUALITY), 85]
         )
 
         frame = buffer.tobytes()
