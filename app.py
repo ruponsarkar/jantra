@@ -134,6 +134,8 @@ STEP_SEQUENCE = [
 
 camera_position = 0
 camera_lock = threading.Lock()
+camera_control_lock = threading.Lock()
+camera_motion_direction = None
 
 for pin in STEPPER_PINS.values():
     GPIO.setup(pin, GPIO.OUT)
@@ -158,19 +160,52 @@ def move_camera(direction="left", steps=20, delay=0.002):
     if direction == "right":
         sequence.reverse()
 
-    for _ in range(steps):
-        for step in sequence:
-            apply_step_sequence(step)
-            time.sleep(delay)
-
     with camera_lock:
+        for _ in range(steps):
+            for step in sequence:
+                apply_step_sequence(step)
+                time.sleep(delay)
+
         camera_position += -steps if direction == "left" else steps
-
-    robot_status = f"Camera moved {direction} ({abs(camera_position)} steps)"
-
-    apply_step_sequence((0, 0, 0, 0))
+        robot_status = f"Camera moved {direction} ({abs(camera_position)} steps)"
+        apply_step_sequence((0, 0, 0, 0))
 
     return camera_position
+
+
+def set_camera_direction(direction):
+    global camera_motion_direction
+
+    with camera_control_lock:
+        camera_motion_direction = direction
+        if direction is None:
+            with camera_lock:
+                apply_step_sequence((0, 0, 0, 0))
+
+
+def camera_motion_worker():
+    global camera_position
+    global robot_status
+
+    while True:
+        with camera_control_lock:
+            direction = camera_motion_direction
+            if direction is not None:
+                sequence = STEP_SEQUENCE if direction == "left" else reversed(STEP_SEQUENCE)
+
+                with camera_lock:
+                    for step in sequence:
+                        apply_step_sequence(step)
+                        time.sleep(0.002)
+
+                    camera_position += -1 if direction == "left" else 1
+                    robot_status = f"Camera moved {direction} ({abs(camera_position)} steps)"
+                continue
+
+        time.sleep(0.01)
+
+
+threading.Thread(target=camera_motion_worker, daemon=True).start()
 
 # =========================
 # GLOBAL STATE
@@ -370,7 +405,7 @@ def gen_frames():
         _, buffer = cv2.imencode(
             '.jpg',
             frame,
-            [int(cv2.IMWRITE_JPEG_QUALITY), 95]
+            [int(cv2.IMWRITE_JPEG_QUALITY), 80]
         )
 
         frame = buffer.tobytes()
@@ -381,6 +416,7 @@ def gen_frames():
             + frame +
             b'\r\n'
         )
+        time.sleep(1 / 15)
 
 
 # =========================
@@ -492,9 +528,7 @@ def move_stop():
 @app.route('/cam_left')
 def cam_left():
 
-    steps = request.args.get('steps', default=15, type=int)
-
-    move_camera("left", steps=steps)
+    set_camera_direction("left")
 
     return jsonify({
         "success": True,
@@ -505,13 +539,22 @@ def cam_left():
 @app.route('/cam_right')
 def cam_right():
 
-    steps = request.args.get('steps', default=15, type=int)
-
-    move_camera("right", steps=steps)
+    set_camera_direction("right")
 
     return jsonify({
         "success": True,
         "message": robot_status
+    })
+
+
+@app.route('/cam_stop')
+def cam_stop():
+
+    set_camera_direction(None)
+
+    return jsonify({
+        "success": True,
+        "message": "Camera stopped"
     })
 
 
@@ -520,6 +563,8 @@ def cam_center():
 
     global camera_position
     global robot_status
+
+    set_camera_direction(None)
 
     with camera_lock:
         steps = abs(camera_position)

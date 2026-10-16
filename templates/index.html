@@ -198,7 +198,7 @@
                         <button class="drive-btn forward" onmousedown="startMove('forward')" onmouseup="stopMove()"
                             onmouseleave="stopMove()" ontouchstart="startMove('forward')" ontouchend="stopMove()">
                             <span class="btn-arrow">▲</span>
-                            Forward
+                            Forward test
                         </button>
 
                         <button class="drive-btn left" onmousedown="startMove('left')" onmouseup="stopMove()"
@@ -268,7 +268,7 @@
 console.log("cmd here==>", cmd);
             try {
 
-                const response = await fetch('/' + cmd);
+            const response = await fetch('/' + cmd);
 
                 const data = await response.json();
 
@@ -301,25 +301,23 @@ console.log("cmd here==>", cmd);
         }
 
         let currentCameraCommand = null;
-        let cameraTimer = null;
+        let cameraCommandQueue = Promise.resolve();
+
+        function sendCameraCommand(cmd) {
+            cameraCommandQueue = cameraCommandQueue.then(() => send(cmd));
+        }
 
         function startCamera(cmd) {
             if (currentCameraCommand === cmd)
                 return;
 
-            stopCamera();
-
             currentCameraCommand = cmd;
-            send(cmd);
-
-            cameraTimer = setInterval(() => send(cmd), 150);
+            sendCameraCommand(cmd);
         }
 
         function stopCamera() {
-            if (cameraTimer) {
-                clearInterval(cameraTimer);
-                cameraTimer = null;
-            }
+            if (currentCameraCommand !== null)
+                sendCameraCommand('cam_stop');
 
             currentCameraCommand = null;
         }
